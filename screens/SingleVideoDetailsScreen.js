@@ -15,7 +15,8 @@ const SingleVideoDetailsScreen = ({ route }) => {
     const [watchedDate, setWatchedDate] = useState('');
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [scale, setScale] = useState(new Animated.Value(1));
-
+    const [contentScale, setContentScale] = useState(1);
+    
     const playerRef = useRef(null);
 
     useEffect(() => {
@@ -61,36 +62,17 @@ const SingleVideoDetailsScreen = ({ route }) => {
             <View style={isFullScreen ? styles.fullScreenVideo : styles.video}>
                 <YoutubePlayer
                     ref={playerRef}
-                    height={isFullScreen ? height : 200}
-                    width={isFullScreen ? width : '100%'}
+                    height={isFullScreen ? height*contentScale : 200}
+                    width={isFullScreen ? width*contentScale : '100%'}
                     videoId={videoId}
                     play={true}
+		    allowWebViewZoom={true}
                     onChangeState={(event) => console.log(event)}
                     onFullScreenChange={handleFullScreenChange}
-                    webViewProps={{
-                        allowsFullscreenVideo: true,
-                        allowsInlineMediaPlayback: true,
-                        allowsFullscreenVideo: true,
-                        scalesPageToFit: true,
-                        bounces: false,
-                        automaticallyAdjustContentInsets: false,
-                        scrollEnabled: false,
-                        showsHorizontalScrollIndicator: false,
-                        showsVerticalScrollIndicator: false,
-                        javaScriptEnabled: true,
-                        domStorageEnabled: true,
-                        useWebKit: true,
-                        injectedJavaScript: `
-                            (function() {
-                                var meta = document.createElement('meta');
-                                meta.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=5, user-scalable=1');
-                                meta.setAttribute('name', 'viewport');
-                                document.getElementsByTagName('head')[0].appendChild(meta);
-                            })();
-                        `,
-                    }}
-                    onGestureBegin={preventSeeking}
-                    onGestureEnd={preventSeeking}
+		    contentScale= {contentScale}
+		    webViewProps={{
+			//userAgent:'Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.71 Safari/537.36'
+		    }}
                 />
             </View>
             {!isFullScreen && (
