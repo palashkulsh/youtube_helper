@@ -4,6 +4,7 @@ import YoutubePlayer from 'react-native-youtube-iframe';
 import { fetchVideoDetails } from '../api/youtube';
 import { getWatchedTime, setWatchedTime } from '../storage/asyncStorage';
 import OrientationLocker from 'react-native-orientation-locker';
+import { State } from 'react-native-gesture-handler'; // Import State from react-native-gesture-handler
 
 const { width, height } = Dimensions.get('window');
 
@@ -39,14 +40,17 @@ const SingleVideoDetailsScreen = ({ route }) => {
         }
     };
 
-    const panResponder = PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onPanResponderMove: (event, gestureState) => {
-            const { dx, dy } = gestureState;
-            const newScale = Math.max(0.1, scale._value - dy / 1000); // Adjust the sensitivity by changing the divisor
-            setScale(newScale);
-        },
-    });
+    const handlePinchGesture = Animated.event(
+        [{ nativeEvent: { scale: scale } }],
+        { useNativeDriver: true }
+    );
+
+    const preventSeeking = (event, gestureState) => {
+        // Prevent seeking by consuming the gesture if the scale factor changes significantly
+        if (Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5) {
+            event.stopPropagation();
+        }
+    };
 
     if (!videoDetails) {
         return <Text>Loading...</Text>;
@@ -54,7 +58,7 @@ const SingleVideoDetailsScreen = ({ route }) => {
 
     return (
         <View style={styles.container}>
-            <View style={isFullScreen ? styles.fullScreenVideo : styles.video} {...panResponder.panHandlers}>
+            <View style={isFullScreen ? styles.fullScreenVideo : styles.video}>
                 <YoutubePlayer
                     ref={playerRef}
                     height={isFullScreen ? height : 200}
@@ -85,7 +89,8 @@ const SingleVideoDetailsScreen = ({ route }) => {
                             })();
                         `,
                     }}
-                    webViewStyle={{ transform: [{ scale: scale }] }}
+                    onGestureBegin={preventSeeking}
+                    onGestureEnd={preventSeeking}
                 />
             </View>
             {!isFullScreen && (
