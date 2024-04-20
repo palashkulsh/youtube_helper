@@ -44,7 +44,7 @@ const VideoDetailsScreen = ({ route }) => {
             <MenuOption onSelect={() => setShowProgressPercentage(!showProgressPercentage)}>
               <View style={styles.menuItem}>
                 <CheckBox
-                  checked={showProgressPercentage}
+                  isChecked={showProgressPercentage}
                     onValueChange={() => setShowProgressPercentage(!showProgressPercentage)}
 		    onClick={() => setShowProgressPercentage(!showProgressPercentage)}
                 />
@@ -54,7 +54,7 @@ const VideoDetailsScreen = ({ route }) => {
             <MenuOption onSelect={() => setShowAggregatePercentage(!showAggregatePercentage)}>
               <View style={styles.menuItem}>
                 <CheckBox
-                  checked={showAggregatePercentage}
+                  isChecked={showAggregatePercentage}
                     onValueChange={() => setShowAggregatePercentage(!showAggregatePercentage)}
 		    onClick={() => setShowAggregatePercentage(!showAggregatePercentage)}
                 />
