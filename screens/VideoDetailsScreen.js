@@ -4,7 +4,7 @@ import { fetchPlaylistDetails } from '../api/youtube';
 import { getPersistedVideoData } from '../storage/asyncStorage';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Menu, MenuOptions, MenuOption, MenuTrigger } from 'react-native-popup-menu';
-import { Checkbox } from 'react-native-paper';
+import CheckBox from 'react-native-check-box';
 
 const VideoDetailsScreen = ({ route }) => {
   const { playlistId, videoId } = route.params;
@@ -43,18 +43,20 @@ const VideoDetailsScreen = ({ route }) => {
           <MenuOptions>
             <MenuOption onSelect={() => setShowProgressPercentage(!showProgressPercentage)}>
               <View style={styles.menuItem}>
-                <Checkbox
-                  status={showProgressPercentage ? 'checked' : 'unchecked'}
-                  onPress={() => setShowProgressPercentage(!showProgressPercentage)}
+                <CheckBox
+                  checked={showProgressPercentage}
+                    onValueChange={() => setShowProgressPercentage(!showProgressPercentage)}
+		    onClick={() => setShowProgressPercentage(!showProgressPercentage)}
                 />
                 <Text style={styles.menuItemText}>Show Progress Percentage</Text>
               </View>
             </MenuOption>
             <MenuOption onSelect={() => setShowAggregatePercentage(!showAggregatePercentage)}>
               <View style={styles.menuItem}>
-                <Checkbox
-                  status={showAggregatePercentage ? 'checked' : 'unchecked'}
-                  onPress={() => setShowAggregatePercentage(!showAggregatePercentage)}
+                <CheckBox
+                  checked={showAggregatePercentage}
+                    onValueChange={() => setShowAggregatePercentage(!showAggregatePercentage)}
+		    onClick={() => setShowAggregatePercentage(!showAggregatePercentage)}
                 />
                 <Text style={styles.menuItemText}>Show Aggregate Percentage</Text>
               </View>
