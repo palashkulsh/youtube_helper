@@ -4,7 +4,7 @@ import { fetchPlaylistDetails } from '../api/youtube';
 import { getPersistedVideoData } from '../storage/asyncStorage';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Menu, MenuOptions, MenuOption, MenuTrigger } from 'react-native-popup-menu';
-import CheckBox from 'react-native-check-box';
+import CheckBox from '@react-native-community/checkbox';
 
 const VideoDetailsScreen = ({ route }) => {
   const { playlistId, videoId } = route.params;
@@ -44,9 +44,8 @@ const VideoDetailsScreen = ({ route }) => {
             <MenuOption onSelect={() => setShowProgressPercentage(!showProgressPercentage)}>
               <View style={styles.menuItem}>
                 <CheckBox
-                  isChecked={showProgressPercentage}
+                  value={showProgressPercentage}
                     onValueChange={() => setShowProgressPercentage(!showProgressPercentage)}
-		    onClick={() => setShowProgressPercentage(!showProgressPercentage)}
                 />
                 <Text style={styles.menuItemText}>Show Progress Percentage</Text>
               </View>
@@ -54,9 +53,8 @@ const VideoDetailsScreen = ({ route }) => {
             <MenuOption onSelect={() => setShowAggregatePercentage(!showAggregatePercentage)}>
               <View style={styles.menuItem}>
                 <CheckBox
-                  isChecked={showAggregatePercentage}
+                  value={showAggregatePercentage}
                     onValueChange={() => setShowAggregatePercentage(!showAggregatePercentage)}
-		    onClick={() => setShowAggregatePercentage(!showAggregatePercentage)}
                 />
                 <Text style={styles.menuItemText}>Show Aggregate Percentage</Text>
               </View>
@@ -97,13 +95,16 @@ const VideoDetailsScreen = ({ route }) => {
     );
   };
 
-  const calculateAggregatePercentage = () => {
-    const nonAbandonedVideos = videos.filter((video) => !video.videoData?.abandoned);
-    const videosWithData = nonAbandonedVideos.filter((video) => video.videoData);
-    return nonAbandonedVideos.length > 0
-      ? Math.round((videosWithData.length / nonAbandonedVideos.length) * 100)
-      : 0;
-  };
+    const calculateAggregatePercentage = () => {
+	const nonAbandonedVideos = videos.filter((video) => !video.videoData?.abandoned);
+	let percentageSum = 0;
+	nonAbandonedVideos.forEach((video) => {
+	    if(video.videoData) {
+		percentageSum += ((video.videoData.watchedTime || 0) / (video.videoData.videoDuration ||  1 )) *100
+	    }
+	});
+	return Number(percentageSum / nonAbandonedVideos.length).toFixed(0);
+    };
 
   return (
     <View style={styles.container}>
