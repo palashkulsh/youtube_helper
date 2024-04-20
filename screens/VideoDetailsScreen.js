@@ -2,11 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { fetchPlaylistDetails } from '../api/youtube';
 import { getPersistedVideoData } from '../storage/asyncStorage';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { Menu, MenuOptions, MenuOption, MenuTrigger } from 'react-native-popup-menu';
+import { Checkbox } from 'react-native-paper';
 
-const VideoDetailsScreen = ({ route, navigation }) => {
+const VideoDetailsScreen = ({ route }) => {
   const { playlistId, videoId } = route.params;
   const [videos, setVideos] = useState([]);
+  const [showProgressPercentage, setShowProgressPercentage] = useState(false);
+  const [showAggregatePercentage, setShowAggregatePercentage] = useState(false);
+  const navigation = useNavigation();
 
   useFocusEffect(
     React.useCallback(() => {
@@ -28,6 +33,38 @@ const VideoDetailsScreen = ({ route, navigation }) => {
     }, [playlistId, videoId, navigation])
   );
 
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <Menu>
+          <MenuTrigger>
+            <Text style={styles.menuIcon}>&#8942;</Text>
+          </MenuTrigger>
+          <MenuOptions>
+            <MenuOption onSelect={() => setShowProgressPercentage(!showProgressPercentage)}>
+              <View style={styles.menuItem}>
+                <Checkbox
+                  status={showProgressPercentage ? 'checked' : 'unchecked'}
+                  onPress={() => setShowProgressPercentage(!showProgressPercentage)}
+                />
+                <Text style={styles.menuItemText}>Show Progress Percentage</Text>
+              </View>
+            </MenuOption>
+            <MenuOption onSelect={() => setShowAggregatePercentage(!showAggregatePercentage)}>
+              <View style={styles.menuItem}>
+                <Checkbox
+                  status={showAggregatePercentage ? 'checked' : 'unchecked'}
+                  onPress={() => setShowAggregatePercentage(!showAggregatePercentage)}
+                />
+                <Text style={styles.menuItemText}>Show Aggregate Percentage</Text>
+              </View>
+            </MenuOption>
+          </MenuOptions>
+        </Menu>
+      ),
+    });
+  }, [navigation, showProgressPercentage, showAggregatePercentage]);
+    
   const handleVideoPress = (videoId) => {
     navigation.navigate('SingleVideoDetails', { videoId });
   };
@@ -44,8 +81,13 @@ const VideoDetailsScreen = ({ route, navigation }) => {
       >
         <Text style={styles.videoTitle}>{item.title}</Text>
         {!abandoned && (
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+            </View>
+            {showProgressPercentage && (
+              <Text style={styles.progressPercentage}>{`${Math.round(progress * 100)}%`}</Text>
+            )}
           </View>
         )}
         {abandoned && <Text style={styles.abandonedText}>Abandoned</Text>}
@@ -53,8 +95,21 @@ const VideoDetailsScreen = ({ route, navigation }) => {
     );
   };
 
+  const calculateAggregatePercentage = () => {
+    const nonAbandonedVideos = videos.filter((video) => !video.videoData?.abandoned);
+    const videosWithData = nonAbandonedVideos.filter((video) => video.videoData);
+    return nonAbandonedVideos.length > 0
+      ? Math.round((videosWithData.length / nonAbandonedVideos.length) * 100)
+      : 0;
+  };
+
   return (
     <View style={styles.container}>
+      {showAggregatePercentage && (
+        <Text style={styles.aggregatePercentage}>
+          Aggregate Completion: {calculateAggregatePercentage()}%
+        </Text>
+      )}
       <FlatList
         data={videos}
         renderItem={renderVideoItem}
@@ -68,6 +123,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+  },
+  menuIcon: {
+    fontSize: 24,
+    marginRight: 16,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  menuItemText: {
+    marginLeft: 8,
   },
   videoCard: {
     backgroundColor: 'white',
@@ -84,7 +150,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 8,
   },
+  progressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   progressBar: {
+    flex: 1,
     height: 4,
     backgroundColor: 'lightgray',
     borderRadius: 2,
@@ -94,9 +165,18 @@ const styles = StyleSheet.create({
     backgroundColor: 'green',
     borderRadius: 2,
   },
+  progressPercentage: {
+    marginLeft: 8,
+    fontSize: 12,
+  },
   abandonedText: {
     fontSize: 12,
     color: 'red',
+  },
+  aggregatePercentage: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 16,
   },
 });
 
