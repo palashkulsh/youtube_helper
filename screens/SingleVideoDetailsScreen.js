@@ -2,8 +2,10 @@ import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Dimensions, Animated } from 'react-native';
 import YoutubePlayer from 'react-native-youtube-iframe';
 import { fetchVideoDetails } from '../api/youtube';
-import { getWatchedTime, setWatchedTime } from '../storage/asyncStorage';
+import { getWatchedTime, saveWatchedTime } from '../storage/asyncStorage';
 import { State } from 'react-native-gesture-handler';
+import { useNavigation } from '@react-navigation/native';
+import Slider from '@react-native-community/slider';
 
 const { width, height } = Dimensions.get('window');
 
@@ -15,18 +17,40 @@ const SingleVideoDetailsScreen = ({ route }) => {
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [contentScale, setContentScale] = useState(1);
     const [isPlaying, setIsPlaying] = useState(false);
+    const [videoDuration, setVideoDuration] = useState(0);
+    const playerRef = useRef();
     
+    const navigation = useNavigation();
+
+    console.log(videoDuration);
+    
+    // Inside your component
+    useEffect(() => {
+	navigation.setOptions({
+	    headerRight: () => (
+		<Button
+		    onPress={() => handleFullScreenChange(!isFullScreen)}
+		    title="Full Screen"
+		/>
+	    ),
+	});
+    }, [isFullScreen]);    
+
     useEffect(() => {
         const fetchData = async () => {
             const details = await fetchVideoDetails(videoId);
             setVideoDetails(details);
-            setWatchedTime(await getWatchedTime(videoId));
+	    let watchedTime = await getWatchedTime(videoId);
+	    console.log('***',watchedTime);
+	    watchedTime = Number(watchedTime.time) || 0;
+            setWatchedTime(watchedTime);
+	    setWatchedDate(watchedTime.date || '');
         };
         fetchData();
     }, [videoId]);
 
     const handleWatchedSubmit = async () => {
-        await setWatchedTime(videoId, watchedTime, watchedDate);
+        await saveWatchedTime(videoId, watchedTime, watchedDate);
     };
 
     const handleFullScreenChange = (fullscreen) => {
@@ -41,23 +65,35 @@ const SingleVideoDetailsScreen = ({ route }) => {
 	console.log(state);
 	if (state === 'playing') {
 	    // Handle end of video
-	    setIsPlaying(true);
+	    setIsPlaying(true);	    
 	} else if (state === 'paused') {
 	    // Handle start of video
 	    setIsPlaying(false);
 	}
     };
+
+    const playerReady = async () => {
+	console.log('Player Ready');
+	playerRef.current?.getDuration().then(            getDuration => console.log({getDuration})          );
+        await playerRef.current?.getDuration().then(getDuration => setVideoDuration(getDuration));
+	await playerRef.current?.seekTo(watchedTime).then();
+    }
+    
     return (
         <View style={styles.container}>
             <View style={[styles.videoContainer, isFullScreen && styles.fullScreenContainer]}>
                <YoutubePlayer
                     height={isFullScreen ? width : 200}
                     width={isFullScreen ? height : '100%'}
-                    videoId={videoId}
+                   videoId={videoId}
+		   ref={playerRef}
                     play={true}
                     onChangeState={handelePlayerStateChange}
                     onFullScreenChange={handleFullScreenChange}
 		   allowWebViewZoom={true}
+		   onReady={playerReady}
+		   onError={console.log}
+		   start={watchedTime}
 		   initialPlayerParams={{
 		       preventFullScreen: true		       
 		   }}
@@ -68,10 +104,10 @@ const SingleVideoDetailsScreen = ({ route }) => {
             </View>
             {!isFullScreen && (
                 <View style={styles.videoDetails}>
-                    <Text>Watched Time: {watchedTime}</Text>
+                    <Text>Watched Time: {Math.floor(watchedTime/60)} m. {Math.ceil(watchedTime)-(Math.floor(watchedTime/60)*60)} s</Text>
                     <Text>Watched Date: {watchedDate}</Text>
                     <TextInput
-                        value={watchedTime}
+                        value={`${watchedTime}`}
                         onChangeText={setWatchedTime}
                         placeholder="Enter watched time"
                     />
@@ -80,8 +116,16 @@ const SingleVideoDetailsScreen = ({ route }) => {
                         onChangeText={setWatchedDate}
                         placeholder="Enter watched date"
                     />
+		    <Slider
+			style={{ width: '100%', height: 40 }}
+			minimumValue={0}
+			maximumValue={videoDuration} // Assuming videoDetails contains duration of the video
+			value={watchedTime}
+			onValueChange={setWatchedTime}
+			minimumTrackTintColor="#FFFFFF"
+			maximumTrackTintColor="#000000"
+		    />		    
                     <Button title="Submit" onPress={handleWatchedSubmit} />
-                    <Button title="Full Screen" onPress={() => handleFullScreenChange(true)} />
                 </View>
             )}
         </View>

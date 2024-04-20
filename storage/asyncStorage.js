@@ -12,7 +12,7 @@ export const getWatchedTime = async (videoId) => {
   }
 };
 
-export const setWatchedTime = async (videoId, watchedTime, watchedDate) => {
+export const saveWatchedTime = async (videoId, watchedTime, watchedDate) => {
   try {
     await AsyncStorage.setItem(
       `watchedTime_${videoId}`,
@@ -33,7 +33,7 @@ export const getWatchedStatus = async (videoId) => {
   }
 };
 
-export const setWatchedStatus = async (videoId, watched) => {
+export const saveWatchedStatus = async (videoId, watched) => {
   try {
     await AsyncStorage.setItem(`watchedStatus_${videoId}`, JSON.stringify(watched));
   } catch (error) {
