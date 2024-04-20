@@ -14,7 +14,8 @@ const SingleVideoDetailsScreen = ({ route }) => {
     const [watchedDate, setWatchedDate] = useState('');
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [contentScale, setContentScale] = useState(1);
-
+    const [isPlaying, setIsPlaying] = useState(false);
+    
     useEffect(() => {
         const fetchData = async () => {
             const details = await fetchVideoDetails(videoId);
@@ -35,7 +36,17 @@ const SingleVideoDetailsScreen = ({ route }) => {
     if (!videoDetails) {
         return <Text>Loading...</Text>;
     }
-    
+
+    const handelePlayerStateChange = (state) => {
+	console.log(state);
+	if (state === 'playing') {
+	    // Handle end of video
+	    setIsPlaying(true);
+	} else if (state === 'paused') {
+	    // Handle start of video
+	    setIsPlaying(false);
+	}
+    };
     return (
         <View style={styles.container}>
             <View style={[styles.videoContainer, isFullScreen && styles.fullScreenContainer]}>
@@ -44,7 +55,7 @@ const SingleVideoDetailsScreen = ({ route }) => {
                     width={isFullScreen ? height : '100%'}
                     videoId={videoId}
                     play={true}
-                    onChangeState={(event) => console.log(event)}
+                    onChangeState={handelePlayerStateChange}
                     onFullScreenChange={handleFullScreenChange}
 		   allowWebViewZoom={true}
 		   initialPlayerParams={{
