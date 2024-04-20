@@ -1,29 +1,32 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Dimensions, Animated } from 'react-native';
 import YoutubePlayer from 'react-native-youtube-iframe';
-import { fetchVideoDetails } from '../api/youtube';
-import { getWatchedTime, saveWatchedTime } from '../storage/asyncStorage';
+import { getPersistedVideoData, persistVideoData } from '../storage/asyncStorage';
 import { State } from 'react-native-gesture-handler';
 import { useNavigation } from '@react-navigation/native';
 import Slider from '@react-native-community/slider';
 import { WakeLockInterface, useWakeLock } from "react-native-android-wake-lock";
+import CheckBox from '@react-native-community/checkbox';
+import { useToast } from "react-native-toast-notifications";
 
 const { width, height } = Dimensions.get('window');
 
 const SingleVideoDetailsScreen = ({ route }) => {
     const { videoId } = route.params;
-    const [videoDetails, setVideoDetails] = useState(null);
     const [watchedTime, setWatchedTime] = useState('');
     const [watchedDate, setWatchedDate] = useState('');
+    const [videoData, setVideoData] = useState({});
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [contentScale, setContentScale] = useState(1);
     const [isPlaying, setIsPlaying] = useState(false);
     const [videoDuration, setVideoDuration] = useState(0);
     const playerRef = useRef();
+    const [abandoned, setAbandoned] = useState(false)
     
     const navigation = useNavigation();
-
-    console.log(videoDuration);
+    const toast = useToast();
+    
+    console.log(abandoned);
     
     // Inside your component
     useEffect(() => {
@@ -39,30 +42,38 @@ const SingleVideoDetailsScreen = ({ route }) => {
 
     useEffect(() => {
         const fetchData = async () => {
-            const details = await fetchVideoDetails(videoId);
-            setVideoDetails(details);
-	    let watchedTime = await getWatchedTime(videoId);
-	    if(!watchedTime)
+	    let videoData = await getPersistedVideoData(videoId);
+	    setVideoData(videoData || {});
+	    if(!videoData)
 		return;
-	    console.log('***',watchedTime);
-	    watchedTime = Number(watchedTime.time) || 0;
-            setWatchedTime(watchedTime);
-	    setWatchedDate(watchedTime.date || '');
+	    console.log('***',videoData);
+	    let persistedWatchedTime = Number(videoData.watchedTime) || 0;
+            setWatchedTime(persistedWatchedTime);
+	    setWatchedDate(videoData.watchedDate || '');
+	    setAbandoned(videoData.abandoned ? true: false);
         };
         fetchData();
     }, [videoId]);
 
     const handleWatchedSubmit = async () => {
-        await saveWatchedTime(videoId, watchedTime, watchedDate, videoDuration);
+	let dataToBeSaved = {
+	    videoId,
+	    watchedTime,
+	    watchedDate,
+	    videoDuration,
+	    abandoned
+	}
+        await persistVideoData(videoId, dataToBeSaved);
+	toast.show('Saved Successfully', {
+	    duration: 2000,
+	    placement: 'bottom',
+	    animationType: 'slide-in',
+	})
     };
 
     const handleFullScreenChange = (fullscreen) => {
         setIsFullScreen(fullscreen);
     };
-
-    if (!videoDetails) {
-        return <Text>Loading...</Text>;
-    }
 
     const handelePlayerStateChange = (state) => {
 	console.log(state);
@@ -114,6 +125,12 @@ const SingleVideoDetailsScreen = ({ route }) => {
                         onChangeText={setWatchedDate}
                         placeholder="Enter watched date"
                     />
+		    <Text> Abandoned: {abandoned ? 'Yes' : 'No'}</Text>
+		    <CheckBox
+			disabled={false}
+			value={abandoned}
+			onValueChange={(newValue) => setAbandoned(newValue)}
+		    />
 		    <Slider
 			style={{ width: '100%', height: 40 }}
 			minimumValue={0}
@@ -124,6 +141,7 @@ const SingleVideoDetailsScreen = ({ route }) => {
 			maximumTrackTintColor="#000000"
 		    />		    
                     <Button title="Submit" onPress={handleWatchedSubmit} />
+		    
                 </View>
             )}
         </View>

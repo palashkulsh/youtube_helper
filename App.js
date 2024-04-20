@@ -4,11 +4,13 @@ import { createStackNavigator } from '@react-navigation/stack';
 import MainScreen from './screens/MainScreen';
 import VideoDetailsScreen from './screens/VideoDetailsScreen';
 import SingleVideoDetailsScreen from './screens/SingleVideoDetailsScreen';
+import { ToastProvider } from 'react-native-toast-notifications'
 
 const Stack = createStackNavigator();
 
 const App = () => {
-  return (
+    return (
+    <ToastProvider>
     <NavigationContainer>
       <Stack.Navigator>
         <Stack.Screen name="Main" component={MainScreen} />
@@ -16,6 +18,8 @@ const App = () => {
         <Stack.Screen name="SingleVideoDetails" component={SingleVideoDetailsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
+    </ToastProvider>	
+	
   );
 };
 

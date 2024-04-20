@@ -2,7 +2,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const getWatchedTime = async (videoId) => {
+export const getPersistedVideoData = async (videoId) => {
   try {
     const watchedTime = await AsyncStorage.getItem(`watchedTime_${videoId}`);
     return watchedTime ? JSON.parse(watchedTime) : null;
@@ -12,11 +12,11 @@ export const getWatchedTime = async (videoId) => {
   }
 };
 
-export const saveWatchedTime = async (videoId, watchedTime, watchedDate, videoDuration) => {
+export const persistVideoData = async (videoId, videoData) => {
   try {
     await AsyncStorage.setItem(
       `watchedTime_${videoId}`,
-	JSON.stringify({ time: watchedTime, date: watchedDate, videoDuration  })
+	JSON.stringify(videoData)
     );
   } catch (error) {
     console.error('Error storing watched time:', error);
