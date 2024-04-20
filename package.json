@@ -19,6 +19,7 @@
     "cheerio": "^1.0.0-rc.12",
     "react": "18.2.0",
     "react-native": "0.73.6",
+    "react-native-android-wake-lock": "^1.1.0",
     "react-native-gesture-handler": "^2.16.0",
     "react-native-orientation-locker": "^1.6.0",
     "react-native-pinch-zoom-view": "^0.2.0",

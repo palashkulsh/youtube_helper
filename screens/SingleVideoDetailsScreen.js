@@ -6,6 +6,7 @@ import { getWatchedTime, saveWatchedTime } from '../storage/asyncStorage';
 import { State } from 'react-native-gesture-handler';
 import { useNavigation } from '@react-navigation/native';
 import Slider from '@react-native-community/slider';
+import { WakeLockInterface, useWakeLock } from "react-native-android-wake-lock";
 
 const { width, height } = Dimensions.get('window');
 
@@ -41,6 +42,8 @@ const SingleVideoDetailsScreen = ({ route }) => {
             const details = await fetchVideoDetails(videoId);
             setVideoDetails(details);
 	    let watchedTime = await getWatchedTime(videoId);
+	    if(!watchedTime)
+		return;
 	    console.log('***',watchedTime);
 	    watchedTime = Number(watchedTime.time) || 0;
             setWatchedTime(watchedTime);
@@ -50,7 +53,7 @@ const SingleVideoDetailsScreen = ({ route }) => {
     }, [videoId]);
 
     const handleWatchedSubmit = async () => {
-        await saveWatchedTime(videoId, watchedTime, watchedDate);
+        await saveWatchedTime(videoId, watchedTime, watchedDate, videoDuration);
     };
 
     const handleFullScreenChange = (fullscreen) => {
@@ -76,7 +79,7 @@ const SingleVideoDetailsScreen = ({ route }) => {
 	console.log('Player Ready');
 	playerRef.current?.getDuration().then(            getDuration => console.log({getDuration})          );
         await playerRef.current?.getDuration().then(getDuration => setVideoDuration(getDuration));
-	await playerRef.current?.seekTo(watchedTime).then();
+	await playerRef.current?.seekTo(watchedTime);
     }
     
     return (
@@ -106,11 +109,6 @@ const SingleVideoDetailsScreen = ({ route }) => {
                 <View style={styles.videoDetails}>
                     <Text>Watched Time: {Math.floor(watchedTime/60)} m. {Math.ceil(watchedTime)-(Math.floor(watchedTime/60)*60)} s</Text>
                     <Text>Watched Date: {watchedDate}</Text>
-                    <TextInput
-                        value={`${watchedTime}`}
-                        onChangeText={setWatchedTime}
-                        placeholder="Enter watched time"
-                    />
                     <TextInput
                         value={watchedDate}
                         onChangeText={setWatchedDate}

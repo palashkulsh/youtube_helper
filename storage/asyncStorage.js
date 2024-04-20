@@ -12,11 +12,11 @@ export const getWatchedTime = async (videoId) => {
   }
 };
 
-export const saveWatchedTime = async (videoId, watchedTime, watchedDate) => {
+export const saveWatchedTime = async (videoId, watchedTime, watchedDate, videoDuration) => {
   try {
     await AsyncStorage.setItem(
       `watchedTime_${videoId}`,
-      JSON.stringify({ time: watchedTime, date: watchedDate })
+	JSON.stringify({ time: watchedTime, date: watchedDate, videoDuration  })
     );
   } catch (error) {
     console.error('Error storing watched time:', error);
