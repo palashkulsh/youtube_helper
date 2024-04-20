@@ -7,7 +7,8 @@ import { Menu, MenuOptions, MenuOption, MenuTrigger } from 'react-native-popup-m
 import CheckBox from '@react-native-community/checkbox';
 
 const VideoDetailsScreen = ({ route }) => {
-  const { playlistId, videoId } = route.params;
+    const { playlistId, videoId } = route.params;
+    console.log(route.params)
   const [videos, setVideos] = useState([]);
   const [showProgressPercentage, setShowProgressPercentage] = useState(false);
   const [showAggregatePercentage, setShowAggregatePercentage] = useState(false);
@@ -25,7 +26,7 @@ const VideoDetailsScreen = ({ route }) => {
             }))
           );
           setVideos(videosWithData);
-        } else {
+        } else if (videoId){
           navigation.navigate('SingleVideoDetails', { videoId });
         }
       };
