@@ -25,35 +25,49 @@ const PlaylistRoute = ({navigation, toast}) => {
     useEffect(() => {
 	const fetchPlaylists = async () => {
 	    const persistedPlaylists = await getPersistedPlaylists();
-	    setPlaylists(persistedPlaylists);
+
+	    if (persistedPlaylists && persistedPlaylists.length) {
+		const updatedPlaylists = await Promise.all(
+		    persistedPlaylists.map(async (playlist) => {
+			const progress = await calculatePlaylistProgress(playlist.videos);
+			console.log('playlist progress', progress);
+			return { ...playlist, progress };
+		    })
+		);
+
+		console.log('playlist values', updatedPlaylists);
+		setPlaylists(updatedPlaylists);
+	    } else {
+		setPlaylists([]);
+	    }
 	};
 
 	fetchPlaylists();
     }, []);
-
+    
     const calculatePlaylistProgress = async (videos) => {
-	let totalDuration = 0;
-	let watchedDuration = 0;
-
-	videos.forEach(async (video) => {
-	    console.log('video',video);
-	    totalDuration += parseInt(video.lengthSeconds);
-	    const watchedTime = await getPersistedVideoData(video.id);
-	    console.log(watchedTime);
-	    if (watchedTime) {
-		console.log('watched',watchedTime);
-		watchedDuration += watchedTime.watchedSeconds;
-	    }
+	const videoDataPromises = videos.map(async (video) => {
+	    const videoData = await getPersistedVideoData(video.id);
+	    const lengthFromPlaylist = parseInt(video.lengthSeconds) || 0;
+	    const videoLength = parseInt(videoData?.videoDuration) || lengthFromPlaylist;
+	    const watchedTime = parseInt(videoData?.watchedTime) || 0;
+	    return { videoLength, watchedTime };
 	});
-	
-	if (watchedDuration && totalDuration) {
-	    return ((watchedDuration / totalDuration) * 100) || 0;
-	} else {
-	    return 0;
-	}
-	
-    };
 
+	const videoDataArray = await Promise.all(videoDataPromises);
+
+	const totalDuration = videoDataArray.reduce((sum, data) => sum + data.videoLength, 0);
+	const watchedDuration = videoDataArray.reduce((sum, data) => sum + data.watchedTime, 0);
+
+	console.log(totalDuration, watchedDuration);
+	if (watchedDuration && totalDuration) {
+	    const progress = ((watchedDuration / totalDuration) * 100).toFixed(0);
+	    return parseInt(progress);
+	}
+
+	return 0;
+    };
+    
     const handleDeletePlaylist = async (playlistId) => {
 	let msg = await removePlaylist(playlistId);
 	setPlaylists(playlists.filter((playlist) => playlist.id !== playlistId));
@@ -74,7 +88,7 @@ const PlaylistRoute = ({navigation, toast}) => {
 		    <Text style={styles.playlistTitle}>{playlist.title}</Text>
 		    <Text style={styles.channelName}>{playlist.channelName}</Text>
 		    <View style={styles.progressBar}>
-			<View style={[styles.progressFill, { width: `${calculatePlaylistProgress(playlist.videos) || 0}%` }]} />
+			<View style={[styles.progressFill, { width: `${playlist.progress || 0}%` }]} />
 		    </View>
 		    <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeletePlaylist(playlist.id)}>
 			<Text style={styles.deleteButtonText}>Delete</Text>
