@@ -104,17 +104,21 @@ const VideosRoute = ({navigation, toast}) => {
 
     useEffect(() => {
 	const fetchVideos = async () => {
-	    const persistedVideos = await getPersistedVideos();
+	    let  persistedVideos = await getPersistedVideos();	    
+	    persistedVideos  = await Promise.all(persistedVideos.map(async (video) => {
+		const progress = await calculateVideoProgress(video.id);
+		return {...video, progress};
+	    }))
 	    setVideos(persistedVideos);
 	};
 
 	fetchVideos();
     }, []);
 
-    const calculateVideoProgress = (videoId) => {
-	const watchedTime = getPersistedVideoData(videoId);
-	if (watchedTime) {
-	    return (watchedTime.watchedSeconds / watchedTime.totalSeconds) * 100;
+    const calculateVideoProgress = async (videoId) => {
+	const videoData = await getPersistedVideoData(videoId);
+	if (videoData && parseInt(videoData.watchedTime)  && parseInt(videoData.videoDuration)) {
+	    return (videoData.watchedTime / videoData.videoDuration) * 100;
 	}
 	return 0;
     };
@@ -128,11 +132,11 @@ const VideosRoute = ({navigation, toast}) => {
     return (
 	<ScrollView style={styles.container}>
 	    {videos.map((video) => (
-		<TouchableOpacity key={video.id} style={styles.videoCard} onPress={() => navigation.navigate('VideoDetails', { videoId: video.id })}>
+		<TouchableOpacity key={video.id} style={styles.videoCard} onPress={() => navigation.navigate('SingleVideoDetails', { videoId: video.id })}>
 		    <Text style={styles.videoTitle}>{video.title}</Text>
 		    <Text style={styles.channelName}>{video.channelName}</Text>
 		    <View style={styles.progressBar}>
-			<View style={[styles.progressFill, { width: `${calculateVideoProgress(video.id)}%` }]} />
+			<View style={[styles.progressFill, { width: `${video.progress || 0}%` }]} />
 		    </View>
 		    <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteVideo(video.id)}>
 			<Text style={styles.deleteButtonText}>Delete</Text>
