@@ -1,11 +1,14 @@
 // MainScreen.js
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, Button, Text, TouchableOpacity, ScrollView, StyleSheet, Dimensions } from 'react-native';
+import { View, TextInput, Button, Text, TouchableOpacity, ScrollView, StyleSheet, Dimensions, Share, Platform, PermissionsAndroid } from 'react-native';
 import { fetchVideoDetails, fetchPlaylistDetails } from '../api/youtube';
 import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
 import { getPersistedVideoData, persistVideoData, getWatchedStatus, saveWatchedStatus, getPersistedPlaylists, persistPlaylist, removePlaylist, removeVideo, getPersistedVideos, persistVideo } from '../storage/asyncStorage';
 import {  useNavigation } from '@react-navigation/native';
 import { useToast } from "react-native-toast-notifications";
+import RNFS from 'react-native-fs';
+import { request, PERMISSIONS } from 'react-native-permissions';
+import DocumentPicker from 'react-native-document-picker';
 
 const extractVideoId = (url) => {
     const videoIdRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/i;
@@ -19,9 +22,98 @@ const extractPlaylistId = (url) => {
     return match ? match[1] : null;
 };
 
+const exportData = async () => {
+    try {
+        const granted = await requestExternalStoragePermission();
+        if (granted) {
+            const playlists = await getPersistedPlaylists();
+            const videos = await getPersistedVideos();
+            const appData = { playlists, videos };
+            const jsonData = JSON.stringify(appData, null, 2);
+            const dirPath = `${RNFS.ExternalDirectoryPath}/MyApp`;
+            const filePath = `${dirPath}/app_data.json`;
+            await RNFS.mkdir(dirPath);
+            await RNFS.writeFile(filePath, jsonData, 'utf8');
+            console.log('Data exported successfully to:', filePath);
+            // Perform any additional actions after successful export
+        } else {
+            console.log('Storage permission denied');
+            // Handle permission denied case
+        }
+    } catch (error) {
+        console.error('Error exporting data:', error);
+        // Handle the error, show an error message, etc.
+    }
+};
+
+const requestExternalStoragePermission = async () => {
+    if (Platform.OS === 'android') {
+        try {
+            const permissions = [
+                PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+                PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+            ];
+            const grantResults = await PermissionsAndroid.requestMultiple(permissions);
+            const isGranted =
+                grantResults[PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE] ===
+                    PermissionsAndroid.RESULTS.GRANTED &&
+                grantResults[PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE] ===
+                    PermissionsAndroid.RESULTS.GRANTED;
+            return isGranted;
+        } catch (error) {
+            console.error('Error requesting external storage permissions:', error);
+            return false;
+        }
+    } else {
+        return true; // Permissions not required for iOS
+    }
+};
+
+const importData = async () => {
+    try {
+        const res = await DocumentPicker.pick({
+            type: [DocumentPicker.types.allFiles],
+        });
+        const jsonData = await res.json();
+        const { playlists, videos } = jsonData;
+        if (playlists && videos) {
+            const existingPlaylists = await getPersistedPlaylists();
+            const existingVideos = await getPersistedVideos();
+            const mergedPlaylists = [...existingPlaylists, ...playlists];
+            const mergedVideos = [...existingVideos, ...videos];
+            await AsyncStorage.setItem('playlists', JSON.stringify(mergedPlaylists));
+            await AsyncStorage.setItem('videos', JSON.stringify(mergedVideos));
+            toast.show('Data imported successfully', {
+                duration: 2000,
+                placement: 'bottom',
+                animationType: 'slide-in',
+            });
+        } else {
+            toast.show('Invalid JSON format', {
+                duration: 2000,
+                placement: 'bottom',
+                animationType: 'slide-in',
+            });
+        }
+    } catch (error) {
+        console.error('Error importing data:', error);
+    }
+};
+
 const PlaylistRoute = ({navigation, toast}) => {
     const [playlists, setPlaylists] = useState([]);
 
+    useEffect(() => {
+	navigation.setOptions({
+            headerRight: () => (
+		<View style={styles.headerButtonsContainer}>
+                    <Button onPress={exportData} title="Export" color="#007AFF" />
+                    <Button onPress={importData} title="Import" color="#007AFF" />
+		</View>
+            ),
+	});
+    }, []);    
+    
     useEffect(() => {
 	const fetchPlaylists = async () => {
 	    const persistedPlaylists = await getPersistedPlaylists();
@@ -282,6 +374,11 @@ const styles = StyleSheet.create({
 	color: 'white',
 	fontWeight: 'bold',
     },
+    headerButtonsContainer: {
+	flexDirection: 'row',
+	alignItems: 'center',
+	marginRight: 10,
+    },    
 });
 
 export default MainScreen;
