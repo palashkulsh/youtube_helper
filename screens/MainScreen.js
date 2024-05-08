@@ -1,6 +1,6 @@
 // MainScreen.js
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, Button, Text, TouchableOpacity, ScrollView, StyleSheet, Dimensions, Share, Platform, PermissionsAndroid } from 'react-native';
+import { View, TextInput, Button, Text, TouchableOpacity, ScrollView, StyleSheet, Dimensions, Platform, PermissionsAndroid } from 'react-native';
 import { fetchVideoDetails, fetchPlaylistDetails } from '../api/youtube';
 import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
 import { getPersistedVideoData, persistVideoData, getWatchedStatus, saveWatchedStatus, getPersistedPlaylists, persistPlaylist, removePlaylist, removeVideo, getPersistedVideos, persistVideo, exportStorage, importStorage } from '../storage/asyncStorage';
@@ -10,7 +10,7 @@ import RNFS from 'react-native-fs';
 import { request, PERMISSIONS } from 'react-native-permissions';
 import DocumentPicker from 'react-native-document-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import Share from 'react-native-share';
 
 const extractVideoId = (url) => {
     const videoIdRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/i;
@@ -24,7 +24,7 @@ const extractPlaylistId = (url) => {
     return match ? match[1] : null;
 };
 
-const exportData = async () => {
+const exportData = async (toast) => {
     try {
         const granted = await requestExternalStoragePermission();
         if (granted) {
@@ -36,7 +36,20 @@ const exportData = async () => {
             await RNFS.writeFile(filePath, jsonData, 'utf8');
             console.log('Data exported successfully to:', filePath);
             // Perform any additional actions after successful export
-        } else {
+	    toast.show("exported successfully",{
+                duration: 2000,
+                placement: 'bottom',
+                animationType: 'slide-in',
+            });
+            const shareOptions = {
+		title: 'App Data',
+		failOnCancel: false,
+		url: 'file://' + filePath,
+		type: 'application/json',
+            };
+
+            await Share.open(shareOptions);	    
+	} else {
             console.log('Storage permission denied');
             // Handle permission denied case
         }
@@ -103,7 +116,7 @@ const PlaylistRoute = ({navigation, toast}) => {
 	navigation.setOptions({
             headerRight: () => (
 		<View style={styles.headerButtonsContainer}>
-                    <Button onPress={exportData} title="Export" color="#007AFF" />
+                    <Button onPress={()=>{exportData(toast)}} title="Export" color="#007AFF" />
                     <Button onPress={()=>{importData(toast)}} title="Import" color="#007AFF" />
 		</View>
             ),
