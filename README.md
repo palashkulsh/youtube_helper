@@ -1,4 +1,17 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+this react native application provides a way for user to track their learnings on youtube. it helps remember and keep track of all the videos that have been watched by the user and till what time.
+
+it has 3 main screens
+	1. main
+	2. VideoDetails screen - this shows what all videos are present in the playlist
+	3. single video detail screen - it shows the video and settings corresponding to those videos. User will view the video on this screen.
+
+known issues
+	1. i have not been able to solve the issue of video not properly fitting the screen.
+	2. this app doesn't use the full screen functionality of react-native-youtube-iframe, as it made the video full screen but wouldn't make it landscape mode to make the full video utilisable. also full screen support didn't have the functionality to zoom in. hence i had to implement them manually.
+
+
+Details
+react-native-youtube-iframe is being used to display video in single video details screen.
 
 # Getting Started
 
@@ -46,7 +59,7 @@ If everything is set up _correctly_, you should see your new app running in your
 
 This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
 
-## Step 3: Modifying your App
+## Step 3: Modifying the App
 
 Now that you have successfully run the app, let's modify it.
 

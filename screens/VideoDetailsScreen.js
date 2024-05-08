@@ -71,7 +71,8 @@ const VideoDetailsScreen = ({ route }) => {
   };
 
   const renderVideoItem = ({ item }) => {
-    const { videoData } = item;
+      const { videoData } = item;
+      console.log(videoData);
     const progress = videoData ? videoData.watchedTime / videoData.videoDuration : 0;
     const abandoned = videoData ? videoData.abandoned : false;
 

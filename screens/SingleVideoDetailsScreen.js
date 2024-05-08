@@ -11,74 +11,99 @@ const { width, height } = Dimensions.get('window');
 
 const SingleVideoDetailsScreen = ({ route }) => {
     const { videoId } = route.params;
-    const [watchedTime, setWatchedTime] = useState('');
-    const [watchedDate, setWatchedDate] = useState('');
-    const [videoData, setVideoData] = useState({});
+    const [videoData, setVideoData] = useState({
+        watchedTime: 0,
+        watchedDate: '',
+        videoDuration: 0,
+        abandoned: false,
+    });
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [videoDuration, setVideoDuration] = useState(0);
     const playerRef = useRef();
-    const [abandoned, setAbandoned] = useState(false);
     
     const navigation = useNavigation();
     const toast = useToast();
 
+    console.log('outside videoData',videoData);
+    
     useEffect(() => {
         navigation.setOptions({
             headerRight: () => (
-                <Button
-                    onPress={() => handleFullScreenChange(!isFullScreen)}
-                    title="Full Screen"
-                    color="#007AFF"
-                />
+                <View style={styles.headerButtonsContainer}>
+                    <Button
+                        onPress={handleSyncTime}
+                        title="Sync"
+                        color="#007AFF"
+                    />		
+                    <Button
+                        onPress={() => handleFullScreenChange(!isFullScreen)}
+                        title="Full Scr."
+                        color="#007AFF"
+                    />
+                </View>
             ),
         });
     }, [isFullScreen]);
 
     useEffect(() => {
         const fetchData = async () => {
-            let videoData = await getPersistedVideoData(videoId);
-            setVideoData(videoData || {});
-            if (!videoData) return;
-            let persistedWatchedTime = Number(videoData.watchedTime) || 0;
-            setWatchedTime(persistedWatchedTime);
-            setWatchedDate(videoData.watchedDate || '');
-            setAbandoned(videoData.abandoned ? true : false);
-        };
+            const persistedData = await getPersistedVideoData(videoId);
+            setVideoData(prevData => ({
+                ...prevData,
+                ...persistedData,
+            }));
+        };	
         fetchData();
     }, [videoId]);
 
+    const handleDataChange = (field, value) => {
+	console.log("changing field",field, value)
+        setVideoData(prevData => ({
+            ...prevData,
+            [field]: value,
+        }));
+    };
+
     const handleWatchedSubmit = async () => {
-        let dataToBeSaved = {
-            videoId,
-            watchedTime,
-            watchedDate,
-            videoDuration,
-            abandoned
-        };
-        await persistVideoData(videoId, dataToBeSaved);
-        toast.show('Saved Successfully', {
+	console.log("watched submit fired",videoData)
+	await persistVideoData(videoId, videoData);
+	toast.show('Saved Successfully', {
             duration: 2000,
             placement: 'bottom',
             animationType: 'slide-in',
-        });
+	});
     };
-
+    
     const handleFullScreenChange = (fullscreen) => {
         setIsFullScreen(fullscreen);
     };
 
+    const handleSyncTime = async () => {
+	const currentTime = await playerRef.current?.getCurrentTime();
+	setVideoData(prevData => {
+            const updatedData = {
+		...prevData,
+		watchedTime: currentTime,
+            };
+            persistVideoData(videoId, updatedData);
+            return updatedData;
+	});
+	toast.show('Time Synced Successfully', {
+            duration: 2000,
+            placement: 'bottom',
+            animationType: 'slide-in',
+	});
+    };
+    
     const handlePlayerStateChange = (state) => {
-        if (state === 'playing') {
-            setIsPlaying(true);
-        } else if (state === 'paused') {
-            setIsPlaying(false);
-        }
+        setIsPlaying(state === 'playing');
     };
 
     const playerReady = async () => {
-        await playerRef.current?.getDuration().then(getDuration => setVideoDuration(getDuration));
-        await playerRef.current?.seekTo(watchedTime);
+	console.log('player ready fired');
+        const duration = await playerRef.current?.getDuration();
+        handleDataChange('videoDuration', duration);
+        await playerRef.current?.seekTo(videoData.watchedTime);
     };
 
     return (
@@ -95,7 +120,7 @@ const SingleVideoDetailsScreen = ({ route }) => {
                     allowWebViewZoom={true}
                     onReady={playerReady}
                     onError={console.log}
-                    start={watchedTime}
+                    start={videoData.watchedTime}
                     initialPlayerParams={{
                         preventFullScreen: true
                     }}
@@ -107,13 +132,15 @@ const SingleVideoDetailsScreen = ({ route }) => {
             {!isFullScreen && (
                 <View style={styles.videoDetails}>
                     <Text style={styles.label}>Watched Time:</Text>
-                    <Text style={styles.value}>{Math.floor(watchedTime / 60)} m. {Math.ceil(watchedTime) - (Math.floor(watchedTime / 60) * 60)} s</Text>
+                    <Text style={styles.value}>
+                        {Math.floor(videoData.watchedTime / 60)} m. {Math.ceil(videoData.watchedTime) - (Math.floor(videoData.watchedTime / 60) * 60)} s
+                    </Text>
 
                     <Text style={styles.label}>Watched Date:</Text>
                     <TextInput
                         style={styles.input}
-                        value={watchedDate}
-                        onChangeText={setWatchedDate}
+                        value={videoData.watchedDate}
+                        onChangeText={(value) => handleDataChange('watchedDate', value)}
                         placeholder="Enter watched date"
                         placeholderTextColor="#999"
                     />
@@ -122,8 +149,8 @@ const SingleVideoDetailsScreen = ({ route }) => {
                         <Text style={styles.label}>Abandoned:</Text>
                         <CheckBox
                             disabled={false}
-                            value={abandoned}
-                            onValueChange={(newValue) => setAbandoned(newValue)}
+                            value={videoData.abandoned}
+                            onValueChange={(value) => handleDataChange('abandoned', value)}
                             tintColors={{ true: '#007AFF', false: '#999' }}
                         />
                     </View>
@@ -131,9 +158,9 @@ const SingleVideoDetailsScreen = ({ route }) => {
                     <Slider
                         style={styles.slider}
                         minimumValue={0}
-                        maximumValue={videoDuration}
-                        value={watchedTime}
-                        onValueChange={setWatchedTime}
+                        maximumValue={videoData.videoDuration}
+                        value={videoData.watchedTime}
+                        onValueChange={(value) => handleDataChange('watchedTime', value)}
                         minimumTrackTintColor="#007AFF"
                         maximumTrackTintColor="#CCC"
                         thumbTintColor="#007AFF"
@@ -196,6 +223,11 @@ const styles = StyleSheet.create({
     button: {
         marginTop: 10,
     },
+    headerButtonsContainer: {
+	flexDirection: 'row',
+	alignItems: 'center',
+	marginRight: 10,
+    },    
 });
 
 export default SingleVideoDetailsScreen;
