@@ -9,6 +9,8 @@ import { useToast } from "react-native-toast-notifications";
 import RNFS from 'react-native-fs';
 import { request, PERMISSIONS } from 'react-native-permissions';
 import DocumentPicker from 'react-native-document-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 const extractVideoId = (url) => {
     const videoIdRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/i;
@@ -69,31 +71,41 @@ const requestExternalStoragePermission = async () => {
     }
 };
 
-const importData = async () => {
+
+const importData = async (toast) => {
     try {
         const res = await DocumentPicker.pick({
             type: [DocumentPicker.types.allFiles],
         });
-        const jsonData = await res.json();
-        const { playlists, videos } = jsonData;
-        if (playlists && videos) {
-            const existingPlaylists = await getPersistedPlaylists();
-            const existingVideos = await getPersistedVideos();
-            const mergedPlaylists = [...existingPlaylists, ...playlists];
-            const mergedVideos = [...existingVideos, ...videos];
-            await AsyncStorage.setItem('playlists', JSON.stringify(mergedPlaylists));
-            await AsyncStorage.setItem('videos', JSON.stringify(mergedVideos));
-            toast.show('Data imported successfully', {
-                duration: 2000,
-                placement: 'bottom',
-                animationType: 'slide-in',
-            });
+	console.log(res)
+        if (res && res[0] && res[0].uri) {
+            const filePath = res[0].uri;
+            const jsonString = await RNFS.readFile(filePath, 'utf8');
+            const jsonData = JSON.parse(jsonString);
+	    console.log("json read,",jsonData);
+            const { playlists, videos } = jsonData;
+            if (playlists && videos) {
+                const existingPlaylists = await getPersistedPlaylists();
+                const existingVideos = await getPersistedVideos();
+                const mergedPlaylists = [...existingPlaylists, ...playlists];
+                const mergedVideos = [...existingVideos, ...videos];
+                await AsyncStorage.setItem('playlists', JSON.stringify(mergedPlaylists));
+                await AsyncStorage.setItem('videos', JSON.stringify(mergedVideos));
+                toast.show('Data imported successfully', {
+                    duration: 2000,
+                    placement: 'bottom',
+                    animationType: 'slide-in',
+                });
+            } else {
+                toast.show('Invalid JSON format', {
+                    duration: 2000,
+                    placement: 'bottom',
+                    animationType: 'slide-in',
+                });
+            }
         } else {
-            toast.show('Invalid JSON format', {
-                duration: 2000,
-                placement: 'bottom',
-                animationType: 'slide-in',
-            });
+            console.log('File selection canceled or failed');
+            // Handle the case when no file was selected or an error occurred
         }
     } catch (error) {
         console.error('Error importing data:', error);
@@ -108,7 +120,7 @@ const PlaylistRoute = ({navigation, toast}) => {
             headerRight: () => (
 		<View style={styles.headerButtonsContainer}>
                     <Button onPress={exportData} title="Export" color="#007AFF" />
-                    <Button onPress={importData} title="Import" color="#007AFF" />
+                    <Button onPress={()=>{importData(toast)}} title="Import" color="#007AFF" />
 		</View>
             ),
 	});
