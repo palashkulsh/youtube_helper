@@ -2,6 +2,37 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// function to export all the stored keys in exportable json format
+// this json can be imported via import function
+
+export const exportStorage = async () => {
+    try {
+	const keys = await AsyncStorage.getAllKeys();
+	const values = await AsyncStorage.multiGet(keys);
+	const exportable = keys.map((key, index) => ({ key, value: values[index][1] }));
+	return exportable;
+    } catch (error) {
+	console.error('Error exporting storage:', error);
+	return [];
+    }
+};
+
+// we need to merge while importing
+export const importStorage = async (data) => {
+    try {
+	// Create an array of key-value pairs from the imported data
+	const pairs = data.map(({ key, value }) => [key, value]);
+	console.log(pairs);
+	// Clear the existing AsyncStorage
+	await AsyncStorage.clear();
+	// Store the imported key-value pairs in AsyncStorage
+	await AsyncStorage.multiSet(pairs);
+	console.log('Data imported successfully');
+    } catch (error) {
+	console.error('Error importing storage:', error);
+    }
+};
+
 export const getPersistedVideoData = async (videoId) => {
     try {
 	const watchedTime = await AsyncStorage.getItem(`watchedTime_${videoId}`);
