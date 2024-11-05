@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { fetchPlaylistDetails } from '../api/youtube';
-import { getPersistedVideoData } from '../storage/asyncStorage';
+import { getPersistedVideoData, getPersistedPlaylistById } from '../storage/asyncStorage';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Menu, MenuOptions, MenuOption, MenuTrigger } from 'react-native-popup-menu';
 import CheckBox from '@react-native-community/checkbox';
@@ -18,7 +18,7 @@ const VideoDetailsScreen = ({ route }) => {
     React.useCallback(() => {
       const fetchData = async () => {
         if (playlistId) {
-          const playlistDetails = await fetchPlaylistDetails(playlistId);
+          const playlistDetails = await getPersistedPlaylistById(playlistId);
           const videosWithData = await Promise.all(
             playlistDetails.videos.map(async (video) => ({
               ...video,

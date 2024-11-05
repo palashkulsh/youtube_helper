@@ -268,12 +268,28 @@ const MainScreen = ({ navigation }) => {
 	let msg = '';
 	if (playlistId) {
 	    console.log("playlistId", playlistId);
-	    const playlistDetails = await fetchPlaylistDetails(playlistId);
-	    msg = await persistPlaylist(playlistDetails);
+	    try {
+		const playlistDetails = await fetchPlaylistDetails(playlistId);
+		msg = await persistPlaylist(playlistDetails);
+	    } catch(error) {
+		toast.show("Cannot fetch Playlist Details. please retry",{
+		    duration: 2000,
+		    placement: 'bottom',
+		    animationType: 'slide-in',
+		});
+	    }
 	} else if (videoId) {
 	    console.log("videoId", videoId);
-	    const videoDetails = await fetchVideoDetails(videoId);
-	    msg = await persistVideo(videoDetails);
+	    try {
+		const videoDetails = await fetchVideoDetails(videoId);
+		msg = await persistVideo(videoDetails);
+	    } catch(error) {	
+		toast.show("Cannot fetch Video Details. please retry",{
+		    duration: 2000,
+		    placement: 'bottom',
+		    animationType: 'slide-in',
+		});	    
+	    }
 	} 
 	toast.show(msg.replace(/_/g,' '),{
 	    duration: 2000,

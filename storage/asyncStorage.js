@@ -82,6 +82,24 @@ export const getPersistedPlaylists = async () => {
     }
 };
 
+export const getPersistedPlaylistById = async (playlistId) => {
+    try {
+	const existingPlaylists = await getPersistedPlaylists();
+	let foundPlaylist;
+	// find playlistId in existingPlaylists
+	existingPlaylists.forEach((playlist) => {
+	    if(playlist.id === playlistId) {
+		foundPlaylist = playlist;
+	    }
+	});
+	console.log("playlist from storage",foundPlaylist);
+	return foundPlaylist;
+    } catch (error) {
+	console.error('Error retrieving playlist:', error);
+	return null;
+    }
+};
+
 export const persistPlaylist = async (playlist) => {
     try {
 	const existingPlaylists = await getPersistedPlaylists();
