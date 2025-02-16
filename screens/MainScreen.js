@@ -337,6 +337,7 @@ const styles = StyleSheet.create({
 	borderWidth: 1,
 	marginBottom: 16,
 	paddingHorizontal: 8,
+	color: '#000000',
     },
     tabIndicator: {
 	backgroundColor: 'blue',
@@ -366,15 +367,17 @@ const styles = StyleSheet.create({
 	fontSize: 18,
 	fontWeight: 'bold',
 	marginBottom: 8,
+	color: '#000000',
     },
     videoTitle: {
 	fontSize: 18,
 	fontWeight: 'bold',
 	marginBottom: 8,
+	color: '#000000',
     },
     channelName: {
 	fontSize: 14,
-	color: 'gray',
+	color: '#666666',
 	marginBottom: 8,
     },
     progressBar: {

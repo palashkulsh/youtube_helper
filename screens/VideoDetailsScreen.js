@@ -25,6 +25,7 @@ const VideoDetailsScreen = ({ route }) => {
               videoData: await getPersistedVideoData(video.id),
             }))
           );
+          console.log("videosWithData",videosWithData);
           setVideos(videosWithData);
         } else if (videoId){
           navigation.navigate('SingleVideoDetails', { videoId });
@@ -72,7 +73,7 @@ const VideoDetailsScreen = ({ route }) => {
 
   const renderVideoItem = ({ item }) => {
       const { videoData } = item;
-      console.log(videoData);
+      console.log("videoData",item);
     const progress = videoData ? videoData.watchedTime / videoData.videoDuration : 0;
     const abandoned = videoData ? videoData.abandoned : false;
 
@@ -132,6 +133,7 @@ const styles = StyleSheet.create({
   menuIcon: {
     fontSize: 24,
     marginRight: 16,
+    color: '#000000',
   },
   menuItem: {
     flexDirection: 'row',
@@ -139,6 +141,7 @@ const styles = StyleSheet.create({
   },
   menuItemText: {
     marginLeft: 8,
+    color: '#000000',
   },
   videoCard: {
     backgroundColor: 'white',
@@ -151,9 +154,10 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   videoTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
     marginBottom: 8,
+    color: '#000000',
   },
   progressContainer: {
     flexDirection: 'row',
@@ -173,15 +177,17 @@ const styles = StyleSheet.create({
   progressPercentage: {
     marginLeft: 8,
     fontSize: 12,
+    color: '#000000',
   },
   abandonedText: {
     fontSize: 12,
-    color: 'red',
+    color: '#ff0000',
   },
   aggregatePercentage: {
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 16,
+    color: '#000000',
   },
 });
 

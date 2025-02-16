@@ -48,6 +48,7 @@ const SingleVideoDetailsScreen = ({ route }) => {
     useEffect(() => {
         const fetchData = async () => {
             const persistedData = await getPersistedVideoData(videoId);
+
             setVideoData(prevData => ({
                 ...prevData,
                 ...persistedData,
@@ -199,10 +200,12 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         marginBottom: 5,
+        color: '#000000',
     },
     value: {
         fontSize: 16,
         marginBottom: 15,
+        color: '#000000',
     },
     input: {
         height: 40,
@@ -211,6 +214,8 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         paddingHorizontal: 10,
         marginBottom: 15,
+        color: '#000000',
+        backgroundColor: '#FFFFFF',
     },
     checkboxContainer: {
         flexDirection: 'row',
